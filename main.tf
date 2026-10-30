@@ -46,19 +46,16 @@ resource "azurerm_container_app_job" "job" {
 
   identity {
     type = "UserAssigned"
-    identity_ids = concat(
-      [azurerm_user_assigned_identity.identity.id],
-      var.registry != null ? [var.registry.identity_id] : [],
-    )
+    identity_ids = [
+      azurerm_user_assigned_identity.identity.id,
+      data.azurerm_user_assigned_identity.acr_pull.id,
+    ]
   }
 
-  # Image-Pull mit einer vorhandenen Identity, die bereits AcrPull auf der Registry hat
-  dynamic "registry" {
-    for_each = var.registry != null ? [var.registry] : []
-    content {
-      server   = registry.value.server
-      identity = registry.value.identity_id
-    }
+  # Image-Pull aus der Trainings-Registry, die Identity hat bereits AcrPull
+  registry {
+    server   = local.registry_server
+    identity = data.azurerm_user_assigned_identity.acr_pull.id
   }
 
   dynamic "manual_trigger_config" {
@@ -91,7 +88,7 @@ resource "azurerm_container_app_job" "job" {
   template {
     container {
       name    = var.container_name
-      image   = var.container_image
+      image   = "${local.registry_server}/${var.container_image}"
       cpu     = var.cpu
       memory  = var.memory
       command = var.command

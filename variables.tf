@@ -37,7 +37,7 @@ variable "storage_account_name" {
 }
 
 variable "container_image" {
-  description = "Container Image, z.B. mcr.microsoft.com/azuredocs/aci-helloworld:latest"
+  description = "Image aus der Trainings-Registry automittraincapp.azurecr.io als <repository>:<tag>, z.B. azuredocs/aci-helloworld:latest"
   type        = string
 }
 
@@ -162,13 +162,4 @@ variable "tags" {
   description = "Tags fuer alle Ressourcen des Moduls"
   type        = map(string)
   default     = {}
-}
-
-variable "registry" {
-  description = "Optional: private Container Registry. server = Login-Server (z.B. myacr.azurecr.io), identity_id = ID einer User Assigned Identity mit AcrPull auf der Registry"
-  type = object({
-    server      = string
-    identity_id = string
-  })
-  default = null
 }

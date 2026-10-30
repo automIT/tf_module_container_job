@@ -12,20 +12,23 @@ Erzeugte Ressourcen:
 
 Im Container wird immer `AZURE_CLIENT_ID` gesetzt, je nach Parameter zusätzlich `KEY_VAULT_URI` und `STORAGE_ACCOUNT_NAME`.
 
-Mit `registry` zieht der Job sein Image aus einer privaten Registry. Dafür wird eine vorhandene Identity mit `AcrPull` zusätzlich zugewiesen.
+Images kommen immer aus der Trainings-Registry `automittraincapp.azurecr.io`: `container_image` ist nur
+`<repository>:<tag>`, das Modul setzt den Login-Server davor. Für den Pull verwendet das Modul die
+Identity `<resource_group_name>-uami`, die der Trainer vorab mit `AcrPull` anlegt (`tf-container_apps/infra`).
+Öffentliche Images (Docker Hub, MCR) werden nicht unterstützt.
 
 ## Verwendung
 
 ```hcl
 module "containerjob_scheduled" {
-  source = "git::https://dev.azure.com/automITde/training/_git/tf_module_container_job?ref=1.1.0"
+  source = "git::https://dev.azure.com/automITde/training/_git/tf_module_container_job?ref=2.0.0"
 
   cj_name                      = "autws15-scheduled"
   resource_group_name          = data.azurerm_resource_group.rg.name
   container_app_environment_id = data.azurerm_container_app_environment.cae.id
   key_vault_id                 = data.azurerm_key_vault.key_vault.id
   storage_account_name         = data.azurerm_storage_account.storage_account.name
-  container_image              = "mcr.microsoft.com/azuredocs/aci-helloworld:latest"
+  container_image              = "azuredocs/aci-helloworld:latest" # -> automittraincapp.azurecr.io/azuredocs/aci-helloworld:latest
 
   trigger_type = "Schedule"
   schedule_trigger_config = {
@@ -52,7 +55,7 @@ module "containerjob_scheduled" {
 | `container_app_environment_id` | string | – | ID des Container App Environments |
 | `key_vault_id` | string | `null` | ID des Key Vaults (RBAC-Modus) |
 | `storage_account_name` | string | `null` | Name des Storage Accounts (in `resource_group_name`) |
-| `container_image` | string | – | Container Image |
+| `container_image` | string | – | Image aus der Trainings-Registry als `<repository>:<tag>`, z. B. `azuredocs/aci-helloworld:latest` |
 | `location` | string | Region der RG | Azure Region |
 | `container_name` | string | `"main"` | Name des Containers |
 | `cpu` | number | `0.25` | CPU pro Replica |
@@ -68,7 +71,6 @@ module "containerjob_scheduled" {
 | `key_vault_secrets` | list(object) | `[]` | `name` (im Job) + `key_vault_secret_name` (im Key Vault) |
 | `probes` | list(object) | `[]` | `type` (`Liveness`/`Readiness`/`Startup`), `port`, optional `transport`, `path`, `initial_delay`, `interval_seconds`, `timeout`, `failure_count_threshold` (`initial_delay` nur bei `Liveness`) |
 | `create_role_assignments` | bool | `true` | Rollen für die Identity vergeben |
-| `registry` | object | `null` | Private Registry: `server` (Login-Server) + `identity_id` (zusätzliche User Assigned Identity mit `AcrPull`) |
 | `tags` | map(string) | `{}` | Tags |
 
 ## Outputs
@@ -96,17 +98,4 @@ module "containerjob_scheduled" {
       secret_name = "demo-secret"
     }
   ]
-```
-
-## Beispiel: Image aus einer privaten Registry
-
-Die Identity muss bereits die Rolle `AcrPull` auf der Registry haben, das Modul vergibt dafür keine Rollen.
-
-```hcl
-  container_image = "${data.azurerm_container_registry.acr.login_server}/azuredocs/aci-helloworld:latest"
-
-  registry = {
-    server      = data.azurerm_container_registry.acr.login_server
-    identity_id = data.azurerm_user_assigned_identity.acr_pull.id
-  }
 ```
