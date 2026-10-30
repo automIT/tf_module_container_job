@@ -23,9 +23,9 @@ Identity `<resource_group_name>-uami`, die der Trainer vorab mit `AcrPull` anleg
 module "containerjob_scheduled" {
   source = "git::https://dev.azure.com/automITde/training/_git/tf_module_container_job?ref=2.0.0"
 
-  cj_name                      = "autws15-scheduled"
+  cj_name                      = "autworkshopcapp1-module-job"
   resource_group_name          = data.azurerm_resource_group.rg.name
-  container_app_environment_id = data.azurerm_container_app_environment.cae.id
+  container_app_environment_id = data.azurerm_container_app_environment.environment.id
   key_vault_id                 = data.azurerm_key_vault.key_vault.id
   storage_account_name         = data.azurerm_storage_account.storage_account.name
   container_image              = "azuredocs/aci-helloworld:latest" # -> automittraincapp.azurecr.io/azuredocs/aci-helloworld:latest
