@@ -45,8 +45,20 @@ resource "azurerm_container_app_job" "job" {
   tags                         = var.tags
 
   identity {
-    type         = "UserAssigned"
-    identity_ids = [azurerm_user_assigned_identity.identity.id]
+    type = "UserAssigned"
+    identity_ids = concat(
+      [azurerm_user_assigned_identity.identity.id],
+      var.registry != null ? [var.registry.identity_id] : [],
+    )
+  }
+
+  # Image-Pull mit einer vorhandenen Identity, die bereits AcrPull auf der Registry hat
+  dynamic "registry" {
+    for_each = var.registry != null ? [var.registry] : []
+    content {
+      server   = registry.value.server
+      identity = registry.value.identity_id
+    }
   }
 
   dynamic "manual_trigger_config" {

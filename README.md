@@ -12,11 +12,13 @@ Erzeugte Ressourcen:
 
 Im Container wird immer `AZURE_CLIENT_ID` gesetzt, je nach Parameter zusätzlich `KEY_VAULT_URI` und `STORAGE_ACCOUNT_NAME`.
 
+Mit `registry` zieht der Job sein Image aus einer privaten Registry. Dafür wird eine vorhandene Identity mit `AcrPull` zusätzlich zugewiesen.
+
 ## Verwendung
 
 ```hcl
 module "containerjob_scheduled" {
-  source = "git::https://dev.azure.com/automITde/training/_git/tf_module_container_job?ref=1.0.0"
+  source = "git::https://dev.azure.com/automITde/training/_git/tf_module_container_job?ref=1.1.0"
 
   cj_name                      = "autws15-scheduled"
   resource_group_name          = data.azurerm_resource_group.rg.name
@@ -66,6 +68,7 @@ module "containerjob_scheduled" {
 | `key_vault_secrets` | list(object) | `[]` | `name` (im Job) + `key_vault_secret_name` (im Key Vault) |
 | `probes` | list(object) | `[]` | `type` (`Liveness`/`Readiness`/`Startup`), `port`, optional `transport`, `path`, `initial_delay`, `interval_seconds`, `timeout`, `failure_count_threshold` (`initial_delay` nur bei `Liveness`) |
 | `create_role_assignments` | bool | `true` | Rollen für die Identity vergeben |
+| `registry` | object | `null` | Private Registry: `server` (Login-Server) + `identity_id` (zusätzliche User Assigned Identity mit `AcrPull`) |
 | `tags` | map(string) | `{}` | Tags |
 
 ## Outputs
@@ -93,4 +96,17 @@ module "containerjob_scheduled" {
       secret_name = "demo-secret"
     }
   ]
+```
+
+## Beispiel: Image aus einer privaten Registry
+
+Die Identity muss bereits die Rolle `AcrPull` auf der Registry haben, das Modul vergibt dafür keine Rollen.
+
+```hcl
+  container_image = "${data.azurerm_container_registry.acr.login_server}/azuredocs/aci-helloworld:latest"
+
+  registry = {
+    server      = data.azurerm_container_registry.acr.login_server
+    identity_id = data.azurerm_user_assigned_identity.acr_pull.id
+  }
 ```

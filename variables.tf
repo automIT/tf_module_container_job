@@ -163,3 +163,12 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "registry" {
+  description = "Optional: private Container Registry. server = Login-Server (z.B. myacr.azurecr.io), identity_id = ID einer User Assigned Identity mit AcrPull auf der Registry"
+  type = object({
+    server      = string
+    identity_id = string
+  })
+  default = null
+}
